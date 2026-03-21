@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rakshit.expensetracker.ui.theme.ExpenseTrackerTheme
 
-// 🔥 Updated model
+// 🔥 Model
 data class Transaction(
     val amount: Int,
     val isIncome: Boolean,
@@ -36,7 +36,7 @@ class MainActivity : ComponentActivity() {
                 var selectedCategory by remember { mutableStateOf("Food") }
 
                 val categories = listOf(
-                    "Food", "Travel", "Shopping", "Bills", "Salary"
+                    "Food", "Travel", "Shopping", "Bills", "Salary", "Other"
                 )
 
                 val transactions = remember { mutableStateListOf<Transaction>() }
@@ -90,7 +90,7 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 🔥 Income & Expense
+                        // 🔥 Income / Expense cards
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
@@ -157,7 +157,7 @@ class MainActivity : ComponentActivity() {
 
                                             Column {
                                                 Text(
-                                                    "${txn.category} (${if (txn.isIncome) "Income" else "Expense"})"
+                                                    "${txn.category} • ${if (txn.isIncome) "Income" else "Expense"}"
                                                 )
                                                 Text("₹ ${txn.amount}")
                                             }
@@ -165,10 +165,7 @@ class MainActivity : ComponentActivity() {
                                             IconButton(onClick = {
                                                 transactions.removeAt(index)
                                             }) {
-                                                Icon(
-                                                    Icons.Default.Delete,
-                                                    contentDescription = "Delete"
-                                                )
+                                                Icon(Icons.Default.Delete, "Delete")
                                             }
                                         }
                                     }
@@ -194,17 +191,16 @@ class MainActivity : ComponentActivity() {
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
-                                        // 🔥 Category selection
+                                        // 🔥 Category chips (modern UI)
                                         Text("Category")
                                         Row {
                                             categories.forEach { cat ->
-                                                Button(
+                                                FilterChip(
+                                                    selected = selectedCategory == cat,
                                                     onClick = { selectedCategory = cat },
-                                                    modifier = Modifier
-                                                        .padding(4.dp)
-                                                ) {
-                                                    Text(cat)
-                                                }
+                                                    label = { Text(cat) },
+                                                    modifier = Modifier.padding(4.dp)
+                                                )
                                             }
                                         }
 
@@ -231,7 +227,7 @@ class MainActivity : ComponentActivity() {
                                 },
                                 confirmButton = {
                                     Button(onClick = {
-                                        val amt = amount.toIntOrNull() ?: 0
+                                        val amt = amount.toIntOrNull() ?: return@Button
 
                                         if (editIndex != -1) {
                                             transactions[editIndex] =
