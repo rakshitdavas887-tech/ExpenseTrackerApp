@@ -15,7 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.rakshit.expensetracker.ui.theme.ExpenseTrackerTheme
 
-data class Transaction(val amount: Int, val isIncome: Boolean)
+// 🔥 Updated model
+data class Transaction(
+    val amount: Int,
+    val isIncome: Boolean,
+    val category: String
+)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,6 +33,12 @@ class MainActivity : ComponentActivity() {
                 var showDialog by remember { mutableStateOf(false) }
                 var amount by remember { mutableStateOf("") }
                 var isIncome by remember { mutableStateOf(true) }
+                var selectedCategory by remember { mutableStateOf("Food") }
+
+                val categories = listOf(
+                    "Food", "Travel", "Shopping", "Bills", "Salary"
+                )
+
                 val transactions = remember { mutableStateListOf<Transaction>() }
 
                 val totalIncome = transactions.filter { it.isIncome }.sumOf { it.amount }
@@ -41,6 +52,7 @@ class MainActivity : ComponentActivity() {
                                 editIndex = -1
                                 amount = ""
                                 isIncome = true
+                                selectedCategory = "Food"
                                 showDialog = true
                             }
                         ) {
@@ -131,6 +143,7 @@ class MainActivity : ComponentActivity() {
                                         onClick = {
                                             amount = txn.amount.toString()
                                             isIncome = txn.isIncome
+                                            selectedCategory = txn.category
                                             editIndex = index
                                             showDialog = true
                                         }
@@ -144,7 +157,7 @@ class MainActivity : ComponentActivity() {
 
                                             Column {
                                                 Text(
-                                                    if (txn.isIncome) "Income" else "Expense"
+                                                    "${txn.category} (${if (txn.isIncome) "Income" else "Expense"})"
                                                 )
                                                 Text("₹ ${txn.amount}")
                                             }
@@ -181,6 +194,22 @@ class MainActivity : ComponentActivity() {
 
                                         Spacer(modifier = Modifier.height(8.dp))
 
+                                        // 🔥 Category selection
+                                        Text("Category")
+                                        Row {
+                                            categories.forEach { cat ->
+                                                Button(
+                                                    onClick = { selectedCategory = cat },
+                                                    modifier = Modifier
+                                                        .padding(4.dp)
+                                                ) {
+                                                    Text(cat)
+                                                }
+                                            }
+                                        }
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
                                         Row {
                                             Button(
                                                 onClick = { isIncome = true },
@@ -206,14 +235,13 @@ class MainActivity : ComponentActivity() {
 
                                         if (editIndex != -1) {
                                             transactions[editIndex] =
-                                                Transaction(amt, isIncome)
+                                                Transaction(amt, isIncome, selectedCategory)
                                             editIndex = -1
                                         } else {
                                             transactions.add(
-                                                Transaction(amt, isIncome)
+                                                Transaction(amt, isIncome, selectedCategory)
                                             )
                                         }
-
 
                                         amount = ""
                                         showDialog = false
