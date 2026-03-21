@@ -1,5 +1,6 @@
 package com.rakshit.expensetracker
 
+import android.app.DatePickerDialog
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,270 +16,528 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.rakshit.expensetracker.ui.theme.ExpenseTrackerTheme
+import java.util.Calendar
 
-// 🔥 Model
+// UPDATED MODEL
 data class Transaction(
     val amount: Int,
     val isIncome: Boolean,
-    val category: String
+    val category: String,
+    val date: String
 )
 
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContent {
+
             ExpenseTrackerTheme {
 
-                var editIndex by remember { mutableStateOf(-1) }
+                val context = LocalContext.current
+
                 var showDialog by remember { mutableStateOf(false) }
+                var editIndex by remember { mutableStateOf(-1) }
+
                 var amount by remember { mutableStateOf("") }
                 var isIncome by remember { mutableStateOf(true) }
                 var selectedCategory by remember { mutableStateOf("Food") }
+                var selectedDate by remember { mutableStateOf("") }
 
-                val categories = listOf("Food", "Travel", "Shopping", "Bills", "Salary", "Other")
-                val transactions = remember { mutableStateListOf<Transaction>() }
+                val categories = listOf(
+                    "Food","Travel","Shopping","Bills","Salary","Other"
+                )
 
-                val totalIncome = transactions.filter { it.isIncome }.sumOf { it.amount }
-                val totalExpense = transactions.filter { !it.isIncome }.sumOf { it.amount }
+                val transactions = remember {
+                    mutableStateListOf<Transaction>()
+                }
+
+                val totalIncome =
+                    transactions.filter { it.isIncome }.sumOf { it.amount }
+
+                val totalExpense =
+                    transactions.filter { !it.isIncome }.sumOf { it.amount }
+
                 val balance = totalIncome - totalExpense
 
+                val calendar = Calendar.getInstance()
+
+                val datePicker = DatePickerDialog(
+                    context,
+                    { _, year, month, day ->
+
+                        selectedDate =
+                            "$day/${month+1}/$year"
+
+                    },
+                    calendar.get(Calendar.YEAR),
+                    calendar.get(Calendar.MONTH),
+                    calendar.get(Calendar.DAY_OF_MONTH)
+                )
+
                 Scaffold(
+
                     floatingActionButton = {
-                        FloatingActionButton(onClick = {
-                            editIndex = -1
-                            amount = ""
-                            isIncome = true
-                            selectedCategory = "Food"
-                            showDialog = true
-                        }) {
-                            Icon(Icons.Default.Add, contentDescription = "Add")
+
+                        FloatingActionButton(
+
+                            onClick = {
+
+                                editIndex = -1
+                                amount = ""
+                                selectedDate = ""
+
+                                showDialog = true
+                            }
+
+                        ) {
+
+                            Icon(Icons.Default.Add,"add")
+
                         }
+
                     }
+
                 ) { paddingValues ->
 
                     Column(
+
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(paddingValues)
                             .padding(16.dp)
+
                     ) {
 
-                        // 🔥 Balance Card
+                        // BALANCE CARD
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
-                                Text("Total Balance", color = MaterialTheme.colorScheme.onPrimary)
+
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+
+                                Text("Total Balance")
+
                                 Text(
                                     "₹ $balance",
-                                    style = MaterialTheme.typography.headlineLarge,
-                                    color = MaterialTheme.colorScheme.onPrimary
+                                    style =
+                                        MaterialTheme
+                                            .typography
+                                            .headlineLarge
                                 )
+
                             }
+
                         }
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(
+                            modifier = Modifier.height(16.dp)
+                        )
 
-                        // 🔥 CUSTOM PIE CHART
-                        if (totalIncome != 0 || totalExpense != 0) {
-                            Card(modifier = Modifier.fillMaxWidth()) {
-                                Column(modifier = Modifier.padding(16.dp)) {
+                        // CHART
+                        if (totalIncome!=0 || totalExpense!=0) {
 
-                                    Text("Analytics")
+                            CustomPieChart(
 
-                                    Spacer(modifier = Modifier.height(16.dp))
+                                income =
+                                    totalIncome.toFloat(),
 
-                                    CustomPieChart(
-                                        income = totalIncome.toFloat(),
-                                        expense = totalExpense.toFloat()
-                                    )
-                                }
-                            }
+                                expense =
+                                    totalExpense.toFloat()
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            )
+
                         }
 
-                        // 🔥 Income & Expense
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-
-                            Card(
-                                modifier = Modifier.weight(1f).padding(4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text("Income")
-                                    Text("₹ $totalIncome")
-                                }
-                            }
-
-                            Card(
-                                modifier = Modifier.weight(1f).padding(4.dp)
-                            ) {
-                                Column(modifier = Modifier.padding(12.dp)) {
-                                    Text("Expense")
-                                    Text("₹ $totalExpense")
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(
+                            modifier = Modifier.height(16.dp)
+                        )
 
                         Text("Transactions")
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(
+                            modifier = Modifier.height(8.dp)
+                        )
 
                         LazyColumn {
-                            itemsIndexed(transactions) { index, txn ->
+
+                            itemsIndexed(transactions)
+                            { index,txn ->
 
                                 Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 4.dp),
+
+                                    modifier =
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical=4.dp),
+
                                     onClick = {
-                                        amount = txn.amount.toString()
-                                        isIncome = txn.isIncome
-                                        selectedCategory = txn.category
-                                        editIndex = index
-                                        showDialog = true
+
+                                        editIndex=index
+
+                                        amount=
+                                            txn.amount.toString()
+
+                                        isIncome=txn.isIncome
+
+                                        selectedCategory=
+                                            txn.category
+
+                                        selectedDate=
+                                            txn.date
+
+                                        showDialog=true
+
                                     }
+
                                 ) {
+
                                     Row(
-                                        modifier = Modifier
-                                            .padding(12.dp)
-                                            .fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween
+
+                                        modifier =
+                                            Modifier
+                                                .padding(12.dp)
+                                                .fillMaxWidth(),
+
+                                        horizontalArrangement =
+                                            Arrangement.SpaceBetween
+
                                     ) {
 
                                         Column {
-                                            Text("${txn.category} • ${if (txn.isIncome) "Income" else "Expense"}")
+
+                                            Text(
+
+                                                "${txn.category} • " +
+                                                        if(txn.isIncome)
+                                                            "Income"
+                                                        else
+                                                            "Expense"
+
+                                            )
+
                                             Text("₹ ${txn.amount}")
+
+                                            Text(
+                                                txn.date,
+                                                style =
+                                                    MaterialTheme
+                                                        .typography
+                                                        .bodySmall
+                                            )
+
                                         }
 
-                                        IconButton(onClick = {
-                                            transactions.removeAt(index)
-                                        }) {
-                                            Icon(Icons.Default.Delete, "Delete")
+                                        IconButton(
+
+                                            onClick = {
+
+                                                transactions
+                                                    .removeAt(index)
+
+                                            }
+
+                                        ) {
+
+                                            Icon(
+                                                Icons.Default.Delete,
+                                                "delete"
+                                            )
+
                                         }
+
                                     }
+
                                 }
+
                             }
+
                         }
 
-                        // 🔥 Dialog
-                        if (showDialog) {
+                        // DIALOG
+                        if(showDialog){
+
                             AlertDialog(
-                                onDismissRequest = { showDialog = false },
-                                title = { Text("Add Transaction") },
+
+                                onDismissRequest = {
+
+                                    showDialog=false
+
+                                },
+
+                                title = {
+
+                                    Text("Add Transaction")
+
+                                },
+
                                 text = {
+
                                     Column {
 
                                         OutlinedTextField(
+
                                             value = amount,
-                                            onValueChange = { amount = it },
-                                            label = { Text("Amount") }
+
+                                            onValueChange = {
+
+                                                amount=it
+
+                                            },
+
+                                            label = {
+
+                                                Text("Amount")
+
+                                            }
+
                                         )
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(
+                                            Modifier.height(8.dp)
+                                        )
+
+                                        // DATE BUTTON
+                                        Button(
+
+                                            onClick = {
+
+                                                datePicker.show()
+
+                                            }
+
+                                        ) {
+
+                                            Text(
+
+                                                if(selectedDate=="")
+                                                    "Select Date"
+                                                else
+                                                    selectedDate
+
+                                            )
+
+                                        }
+
+                                        Spacer(
+                                            Modifier.height(8.dp)
+                                        )
 
                                         Text("Category")
 
                                         Row {
-                                            categories.forEach { cat ->
+
+                                            categories.forEach{cat->
+
                                                 FilterChip(
-                                                    selected = selectedCategory == cat,
-                                                    onClick = { selectedCategory = cat },
-                                                    label = { Text(cat) },
-                                                    modifier = Modifier.padding(4.dp)
+
+                                                    selected =
+                                                        selectedCategory==cat,
+
+                                                    onClick = {
+
+                                                        selectedCategory=cat
+
+                                                    },
+
+                                                    label = {
+
+                                                        Text(cat)
+
+                                                    }
+
                                                 )
+
                                             }
+
                                         }
 
-                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Spacer(
+                                            Modifier.height(8.dp)
+                                        )
 
                                         Row {
+
                                             Button(
-                                                onClick = { isIncome = true },
-                                                modifier = Modifier.weight(1f)
-                                            ) {
+
+                                                onClick = {
+
+                                                    isIncome=true
+
+                                                },
+
+                                                modifier =
+                                                    Modifier.weight(1f)
+
+                                            ){
+
                                                 Text("Income")
+
                                             }
 
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Spacer(
+                                                Modifier.width(8.dp)
+                                            )
 
                                             Button(
-                                                onClick = { isIncome = false },
-                                                modifier = Modifier.weight(1f)
-                                            ) {
+
+                                                onClick = {
+
+                                                    isIncome=false
+
+                                                },
+
+                                                modifier =
+                                                    Modifier.weight(1f)
+
+                                            ){
+
                                                 Text("Expense")
+
                                             }
+
                                         }
+
                                     }
+
                                 },
-                                confirmButton = {
-                                    Button(onClick = {
-                                        val amt = amount.toIntOrNull() ?: return@Button
 
-                                        if (editIndex != -1) {
-                                            transactions[editIndex] =
-                                                Transaction(amt, isIncome, selectedCategory)
-                                            editIndex = -1
-                                        } else {
-                                            transactions.add(Transaction(amt, isIncome, selectedCategory))
+                                confirmButton = {
+
+                                    Button(
+
+                                        onClick = {
+
+                                            val amt =
+                                                amount.toIntOrNull()
+                                                    ?: return@Button
+
+                                            if(selectedDate=="")
+                                                return@Button
+
+                                            if(editIndex!=-1){
+
+                                                transactions[editIndex] =
+
+                                                    Transaction(
+
+                                                        amt,
+
+                                                        isIncome,
+
+                                                        selectedCategory,
+
+                                                        selectedDate
+
+                                                    )
+
+                                            }
+
+                                            else{
+
+                                                transactions.add(
+
+                                                    Transaction(
+
+                                                        amt,
+
+                                                        isIncome,
+
+                                                        selectedCategory,
+
+                                                        selectedDate
+
+                                                    )
+
+                                                )
+
+                                            }
+
+                                            showDialog=false
+
                                         }
 
-                                        amount = ""
-                                        showDialog = false
-                                    }) {
+                                    ){
+
                                         Text("Save")
+
                                     }
+
                                 }
+
                             )
+
                         }
+
                     }
+
                 }
+
             }
+
         }
+
     }
+
 }
 
+// CUSTOM CHART
 @Composable
-fun CustomPieChart(income: Float, expense: Float) {
+fun CustomPieChart(
+    income:Float,
+    expense:Float
+){
 
     val total = income + expense
 
-    val incomeAngle = (income / total) * 360f
-    val expenseAngle = (expense / total) * 360f
+    val incomeAngle =
+        (income/total)*360f
 
-    Canvas(modifier = Modifier.size(200.dp)) {
+    val expenseAngle =
+        (expense/total)*360f
 
-        var startAngle = 0f
+    Canvas(
+        modifier = Modifier.size(200.dp)
+    ){
 
-        // 🔥 Income Slice (Green)
+        var startAngle=0f
+
         drawArc(
+
             color = Color(0xFF4CAF50),
-            startAngle = startAngle,
-            sweepAngle = incomeAngle,
-            useCenter = true,
-            size = Size(size.width, size.height)
+
+            startAngle=startAngle,
+
+            sweepAngle=incomeAngle,
+
+            useCenter=true,
+
+            size = Size(size.width,size.height)
+
         )
 
-        startAngle += incomeAngle
+        startAngle+=incomeAngle
 
-        // 🔥 Expense Slice (Red)
         drawArc(
+
             color = Color(0xFFF44336),
-            startAngle = startAngle,
-            sweepAngle = expenseAngle,
-            useCenter = true,
-            size = Size(size.width, size.height)
+
+            startAngle=startAngle,
+
+            sweepAngle=expenseAngle,
+
+            useCenter=true,
+
+            size = Size(size.width,size.height)
+
         )
+
     }
+
 }
