@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.rakshit.expensetracker.ui.theme.ExpenseTrackerTheme
 import java.util.Calendar
 
-// UPDATED MODEL
+// MODEL
 data class Transaction(
     val amount: Int,
     val isIncome: Boolean,
@@ -140,7 +140,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.height(16.dp)
                         )
 
-                        // CHART
+                        // PIE CHART
                         if (totalIncome!=0 || totalExpense!=0) {
 
                             CustomPieChart(
@@ -159,7 +159,10 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.height(16.dp)
                         )
 
-                        Text("Transactions")
+                        Text(
+                            "Transactions",
+                            style = MaterialTheme.typography.titleLarge
+                        )
 
                         Spacer(
                             modifier = Modifier.height(8.dp)
@@ -260,6 +263,13 @@ class MainActivity : ComponentActivity() {
 
                         }
 
+                        Spacer(Modifier.height(16.dp))
+
+                        // MONTHLY REPORT
+                        MonthlyReportScreen(
+                            transactions = transactions
+                        )
+
                         // DIALOG
                         if(showDialog){
 
@@ -303,7 +313,6 @@ class MainActivity : ComponentActivity() {
                                             Modifier.height(8.dp)
                                         )
 
-                                        // DATE BUTTON
                                         Button(
 
                                             onClick = {
@@ -487,7 +496,7 @@ class MainActivity : ComponentActivity() {
 
 }
 
-// CUSTOM CHART
+// PIE CHART
 @Composable
 fun CustomPieChart(
     income:Float,
