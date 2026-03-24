@@ -8,6 +8,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -17,11 +18,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.rakshit.expensetracker.ui.theme.ExpenseTrackerTheme
 import java.util.Calendar
 
-// MODEL
+
 data class Transaction(
     val amount: Int,
     val isIncome: Boolean,
@@ -29,9 +31,11 @@ data class Transaction(
     val date: String
 )
 
+
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
         setContent {
@@ -41,43 +45,118 @@ class MainActivity : ComponentActivity() {
                 val context = LocalContext.current
 
                 var showDialog by remember { mutableStateOf(false) }
+
                 var editIndex by remember { mutableStateOf(-1) }
 
                 var amount by remember { mutableStateOf("") }
+
                 var isIncome by remember { mutableStateOf(true) }
+
                 var selectedCategory by remember { mutableStateOf("Food") }
+
                 var selectedDate by remember { mutableStateOf("") }
 
+                var searchText by remember { mutableStateOf("") }
+
+                var filterType by remember { mutableStateOf("All") }
+
+
                 val categories = listOf(
-                    "Food","Travel","Shopping","Bills","Salary","Other"
+
+                    "Food",
+                    "Travel",
+                    "Shopping",
+                    "Bills",
+                    "Salary",
+                    "Other"
+
                 )
 
+
                 val transactions = remember {
+
                     mutableStateListOf<Transaction>()
+
                 }
 
+
+                val filteredTransactions = transactions.filter {
+
+                    val matchesSearch =
+
+                        it.category.contains(searchText,true)
+
+
+                    val matchesFilter = when(filterType){
+
+                        "Income" -> it.isIncome
+
+                        "Expense" -> !it.isIncome
+
+                        else -> true
+
+                    }
+
+
+                    matchesSearch && matchesFilter
+
+                }
+
+
+
                 val totalIncome =
-                    transactions.filter { it.isIncome }.sumOf { it.amount }
+
+                    transactions.filter {
+
+                        it.isIncome
+
+                    }.sumOf {
+
+                        it.amount
+
+                    }
+
 
                 val totalExpense =
-                    transactions.filter { !it.isIncome }.sumOf { it.amount }
+
+                    transactions.filter {
+
+                        !it.isIncome
+
+                    }.sumOf {
+
+                        it.amount
+
+                    }
+
 
                 val balance = totalIncome - totalExpense
 
+
                 val calendar = Calendar.getInstance()
 
+
                 val datePicker = DatePickerDialog(
+
                     context,
-                    { _, year, month, day ->
+
+                    { _,year,month,day ->
 
                         selectedDate =
+
                             "$day/${month+1}/$year"
 
                     },
+
                     calendar.get(Calendar.YEAR),
+
                     calendar.get(Calendar.MONTH),
+
                     calendar.get(Calendar.DAY_OF_MONTH)
+
                 )
+
+
 
                 Scaffold(
 
@@ -88,15 +167,18 @@ class MainActivity : ComponentActivity() {
                             onClick = {
 
                                 editIndex = -1
+
                                 amount = ""
+
                                 selectedDate = ""
 
                                 showDialog = true
+
                             }
 
                         ) {
 
-                            Icon(Icons.Default.Add,"add")
+                            Icon(Icons.Default.Add,null)
 
                         }
 
@@ -104,182 +186,346 @@ class MainActivity : ComponentActivity() {
 
                 ) { paddingValues ->
 
+
                     Column(
 
                         modifier = Modifier
+
                             .fillMaxSize()
+
                             .padding(paddingValues)
+
                             .padding(16.dp)
 
                     ) {
 
-                        // BALANCE CARD
+
                         Card(
+
                             modifier = Modifier.fillMaxWidth()
+
                         ) {
 
                             Column(
+
                                 modifier = Modifier.padding(16.dp)
+
                             ) {
 
                                 Text("Total Balance")
 
                                 Text(
+
                                     "₹ $balance",
-                                    style =
-                                        MaterialTheme
-                                            .typography
-                                            .headlineLarge
+
+                                    style = MaterialTheme.typography.headlineLarge
+
                                 )
 
                             }
 
                         }
 
+
+
                         Spacer(
+
                             modifier = Modifier.height(16.dp)
+
                         )
 
-                        // PIE CHART
-                        if (totalIncome!=0 || totalExpense!=0) {
+
+
+                        if(totalIncome!=0 || totalExpense!=0){
 
                             CustomPieChart(
 
-                                income =
-                                    totalIncome.toFloat(),
+                                income = totalIncome.toFloat(),
 
-                                expense =
-                                    totalExpense.toFloat()
+                                expense = totalExpense.toFloat()
 
                             )
 
                         }
 
+
+
                         Spacer(
+
                             modifier = Modifier.height(16.dp)
+
                         )
+
+
 
                         Text(
-                            "Transactions",
-                            style = MaterialTheme.typography.titleLarge
+
+                            "Search",
+
+                            style = MaterialTheme.typography.titleMedium
+
                         )
+
+
+
+                        OutlinedTextField(
+
+                            value = searchText,
+
+                            onValueChange = {
+
+                                searchText = it
+
+                            },
+
+                            label = {
+
+                                Text("Search category")
+
+                            },
+
+                            modifier = Modifier.fillMaxWidth(),
+
+                            keyboardOptions = KeyboardOptions(
+
+                                keyboardType = KeyboardType.Text
+
+                            )
+
+                        )
+
+
 
                         Spacer(
+
                             modifier = Modifier.height(8.dp)
+
                         )
 
-                        LazyColumn {
 
-                            itemsIndexed(transactions)
-                            { index,txn ->
 
-                                Card(
+                        Row {
 
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical=4.dp),
+                            listOf(
+
+                                "All",
+
+                                "Income",
+
+                                "Expense"
+
+                            ).forEach {
+
+                                FilterChip(
+
+                                    selected = filterType==it,
 
                                     onClick = {
 
-                                        editIndex=index
+                                        filterType = it
 
-                                        amount=
-                                            txn.amount.toString()
+                                    },
 
-                                        isIncome=txn.isIncome
+                                    label = {
 
-                                        selectedCategory=
-                                            txn.category
+                                        Text(it)
 
-                                        selectedDate=
-                                            txn.date
+                                    },
 
-                                        showDialog=true
+                                    modifier = Modifier.padding(end=6.dp)
 
-                                    }
-
-                                ) {
-
-                                    Row(
-
-                                        modifier =
-                                            Modifier
-                                                .padding(12.dp)
-                                                .fillMaxWidth(),
-
-                                        horizontalArrangement =
-                                            Arrangement.SpaceBetween
-
-                                    ) {
-
-                                        Column {
-
-                                            Text(
-
-                                                "${txn.category} • " +
-                                                        if(txn.isIncome)
-                                                            "Income"
-                                                        else
-                                                            "Expense"
-
-                                            )
-
-                                            Text("₹ ${txn.amount}")
-
-                                            Text(
-                                                txn.date,
-                                                style =
-                                                    MaterialTheme
-                                                        .typography
-                                                        .bodySmall
-                                            )
-
-                                        }
-
-                                        IconButton(
-
-                                            onClick = {
-
-                                                transactions
-                                                    .removeAt(index)
-
-                                            }
-
-                                        ) {
-
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                "delete"
-                                            )
-
-                                        }
-
-                                    }
-
-                                }
+                                )
 
                             }
 
                         }
 
-                        Spacer(Modifier.height(16.dp))
 
-                        // MONTHLY REPORT
-                        MonthlyReportScreen(
-                            transactions = transactions
+
+                        Spacer(
+
+                            modifier = Modifier.height(12.dp)
+
                         )
 
-                        // DIALOG
+
+
+                        Text(
+
+                            "Transactions",
+
+                            style = MaterialTheme.typography.titleLarge
+
+                        )
+
+
+
+                        Spacer(
+
+                            modifier = Modifier.height(8.dp)
+
+                        )
+
+
+
+                        LazyColumn {
+
+
+                            itemsIndexed(filteredTransactions)
+
+                            { index,txn ->
+
+
+                                Card(
+
+                                    modifier = Modifier
+
+                                        .fillMaxWidth()
+
+                                        .padding(vertical=4.dp),
+
+                                    onClick = {
+
+
+                                        editIndex = index
+
+                                        amount = txn.amount.toString()
+
+                                        isIncome = txn.isIncome
+
+                                        selectedCategory = txn.category
+
+                                        selectedDate = txn.date
+
+                                        showDialog = true
+
+                                    }
+
+                                ) {
+
+
+                                    Row(
+
+                                        modifier = Modifier
+
+                                            .padding(12.dp)
+
+                                            .fillMaxWidth(),
+
+                                        horizontalArrangement =
+
+                                            Arrangement.SpaceBetween
+
+                                    ) {
+
+
+                                        Column {
+
+
+                                            Text(
+
+                                                txn.category +
+
+                                                        " • " +
+
+                                                        if(txn.isIncome)
+
+                                                            "Income"
+
+                                                        else
+
+                                                            "Expense"
+
+                                            )
+
+
+                                            Text(
+
+                                                "₹ ${txn.amount}"
+
+                                            )
+
+
+                                            Text(
+
+                                                txn.date,
+
+                                                style =
+
+                                                    MaterialTheme
+
+                                                        .typography
+
+                                                        .bodySmall
+
+                                            )
+
+                                        }
+
+
+
+                                        IconButton(
+
+                                            onClick = {
+
+                                                transactions.removeAt(index)
+
+                                            }
+
+                                        ) {
+
+
+                                            Icon(
+
+                                                Icons.Default.Delete,
+
+                                                null
+
+                                            )
+
+                                        }
+
+
+                                    }
+
+
+                                }
+
+
+                            }
+
+
+                        }
+
+
+
+                        Spacer(
+
+                            Modifier.height(16.dp)
+
+                        )
+
+
+
+                        MonthlyReportScreen(
+
+                            transactions = transactions
+
+                        )
+
+
+
                         if(showDialog){
+
 
                             AlertDialog(
 
                                 onDismissRequest = {
 
-                                    showDialog=false
+                                    showDialog = false
 
                                 },
+
 
                                 title = {
 
@@ -287,9 +533,12 @@ class MainActivity : ComponentActivity() {
 
                                 },
 
+
                                 text = {
 
+
                                     Column {
+
 
                                         OutlinedTextField(
 
@@ -297,7 +546,7 @@ class MainActivity : ComponentActivity() {
 
                                             onValueChange = {
 
-                                                amount=it
+                                                amount = it
 
                                             },
 
@@ -309,9 +558,15 @@ class MainActivity : ComponentActivity() {
 
                                         )
 
+
+
                                         Spacer(
+
                                             Modifier.height(8.dp)
+
                                         )
+
+
 
                                         Button(
 
@@ -323,37 +578,56 @@ class MainActivity : ComponentActivity() {
 
                                         ) {
 
+
                                             Text(
 
                                                 if(selectedDate=="")
+
                                                     "Select Date"
+
                                                 else
+
                                                     selectedDate
 
                                             )
 
                                         }
 
+
+
                                         Spacer(
+
                                             Modifier.height(8.dp)
+
                                         )
+
+
 
                                         Text("Category")
 
+
+
                                         Row {
 
-                                            categories.forEach{cat->
+
+                                            categories.forEach{
+
+                                                    cat ->
+
 
                                                 FilterChip(
 
                                                     selected =
+
                                                         selectedCategory==cat,
+
 
                                                     onClick = {
 
-                                                        selectedCategory=cat
+                                                        selectedCategory = cat
 
                                                     },
+
 
                                                     label = {
 
@@ -365,23 +639,32 @@ class MainActivity : ComponentActivity() {
 
                                             }
 
+
                                         }
 
+
+
                                         Spacer(
+
                                             Modifier.height(8.dp)
+
                                         )
 
+
+
                                         Row {
+
 
                                             Button(
 
                                                 onClick = {
 
-                                                    isIncome=true
+                                                    isIncome = true
 
                                                 },
 
                                                 modifier =
+
                                                     Modifier.weight(1f)
 
                                             ){
@@ -390,19 +673,26 @@ class MainActivity : ComponentActivity() {
 
                                             }
 
+
+
                                             Spacer(
+
                                                 Modifier.width(8.dp)
+
                                             )
+
+
 
                                             Button(
 
                                                 onClick = {
 
-                                                    isIncome=false
+                                                    isIncome = false
 
                                                 },
 
                                                 modifier =
+
                                                     Modifier.weight(1f)
 
                                             ){
@@ -411,26 +701,39 @@ class MainActivity : ComponentActivity() {
 
                                             }
 
+
                                         }
+
 
                                     }
 
+
                                 },
 
+
                                 confirmButton = {
+
 
                                     Button(
 
                                         onClick = {
 
+
                                             val amt =
+
                                                 amount.toIntOrNull()
+
                                                     ?: return@Button
 
+
                                             if(selectedDate=="")
+
                                                 return@Button
 
+
+
                                             if(editIndex!=-1){
+
 
                                                 transactions[editIndex] =
 
@@ -446,9 +749,12 @@ class MainActivity : ComponentActivity() {
 
                                                     )
 
+
                                             }
 
+
                                             else{
+
 
                                                 transactions.add(
 
@@ -466,9 +772,13 @@ class MainActivity : ComponentActivity() {
 
                                                 )
 
+
                                             }
 
-                                            showDialog=false
+
+
+                                            showDialog = false
+
 
                                         }
 
@@ -478,75 +788,107 @@ class MainActivity : ComponentActivity() {
 
                                     }
 
+
                                 }
+
 
                             )
 
+
                         }
+
 
                     }
 
+
                 }
+
 
             }
 
+
         }
+
 
     }
 
+
 }
 
-// PIE CHART
+
+
 @Composable
+
 fun CustomPieChart(
+
     income:Float,
+
     expense:Float
+
 ){
+
 
     val total = income + expense
 
+
     val incomeAngle =
+
         (income/total)*360f
 
+
     val expenseAngle =
+
         (expense/total)*360f
 
+
+
     Canvas(
+
         modifier = Modifier.size(200.dp)
+
     ){
 
-        var startAngle=0f
+
+        var startAngle = 0f
+
+
 
         drawArc(
 
             color = Color(0xFF4CAF50),
 
-            startAngle=startAngle,
+            startAngle = startAngle,
 
-            sweepAngle=incomeAngle,
+            sweepAngle = incomeAngle,
 
-            useCenter=true,
+            useCenter = true,
 
             size = Size(size.width,size.height)
 
         )
 
-        startAngle+=incomeAngle
+
+
+        startAngle += incomeAngle
+
+
 
         drawArc(
 
             color = Color(0xFFF44336),
 
-            startAngle=startAngle,
+            startAngle = startAngle,
 
-            sweepAngle=expenseAngle,
+            sweepAngle = expenseAngle,
 
-            useCenter=true,
+            useCenter = true,
 
             size = Size(size.width,size.height)
 
         )
 
+
     }
+
 
 }
